@@ -1,0 +1,77 @@
+import pygame
+
+# Initialize Pygame
+pygame.init()
+
+# Set the window size
+WINDOW_WIDTH = 800
+WINDOW_HEIGHT = 600
+
+# Set the colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+
+# Set the font
+FONT = pygame.font.Font(None, 64)
+
+# Create the window
+window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
+pygame.display.set_caption("Average Calculator")
+
+# Set the game variables
+num_list = []
+text_input = ""
+average = 0
+
+# Set the game loop
+game_loop = True
+
+# Set the clock
+clock = pygame.time.Clock()
+
+# Define the functions
+def display_text(text, x, y, color):
+    text_surface = FONT.render(text, True, color)
+    text_rect = text_surface.get_rect()
+    text_rect.center = (x, y)
+    window.blit(text_surface, text_rect)
+
+def calculate_average():
+    if len(num_list) == 0:
+        return 0
+    else:
+        return sum(num_list) / len(num_list)
+
+# Start the game loop
+while game_loop:
+    # Handle events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            game_loop = False
+        elif event.type == pygame.KEYDOWN:
+            if event.unicode.isdigit():
+                text_input += event.unicode
+            elif event.key == pygame.K_RETURN:
+                if len(text_input) > 0:
+                    num_list.append(int(text_input))
+                    text_input = ""
+                    average = calculate_average()
+            elif event.key == pygame.K_BACKSPACE:
+                text_input = text_input[:-1]
+
+    # Clear the window
+    window.fill(WHITE)
+
+    # Display the text input and average
+    display_text(text_input, WINDOW_WIDTH // 2, 200, BLACK)
+    display_text(f"Average: {average:.2f}", WINDOW_WIDTH // 2, 400, BLACK)
+
+    # Update the window
+    pygame.display.update()
+
+    # Set the FPS
+    clock.tick(60)
+
+# Quit Pygame
+pygame.quit()
