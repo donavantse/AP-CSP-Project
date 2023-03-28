@@ -1,77 +1,162 @@
 import pygame
+import random
 
-# Initialize Pygame
+# Initialize pygame
 pygame.init()
 
-# Set the window size
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+# Define game window
+screen = pygame.display.set_mode((800, 600))
+pygame.display.set_caption("Typing Game")
 
-# Set the colors
+# Define colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-RED = (255, 0, 0)
 
-# Set the font
-FONT = pygame.font.Font(None, 64)
+# Define font
+font = pygame.font.SysFont(None, 40)
 
-# Create the window
-window = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-pygame.display.set_caption("Average Calculator")
+# Define text box
+text_box = pygame.Rect(250, 250, 300, 50)
 
-# Set the game variables
-num_list = []
-text_input = ""
-average = 0
+# Define game variables
+score = 0
+timer = 30
+word_list = ["apple", "banana", "orange", "grape", "kiwi", "lemon", "mango", "peach", "pear", "pineapple", "strawberry", "watermelon"]
+current_word = ""
+input_word = ""
+word_index = 0
+game_over = False
 
-# Set the game loop
-game_loop = True
+# Define functions
+def generate_word():
+    global current_word, word_index
+    current_word = word_list[word_index]
+    word_index += 1
+    if word_index >= len(word_list):
+        word_index = 0
 
-# Set the clock
+def draw_text(text, color, x, y):
+    text_surface = font.render(text, True, color)
+    screen.blit(text_surface, (x, y))
+
+def draw_game():
+    screen.fill(WHITE)
+    draw_text("Type the word:", BLACK, 250, 200)
+    draw_text(current_word, BLACK, 350, 300)
+    draw_text(f"Score: {score}", BLACK, 10, 10)
+    draw_text(f"Time: {timer}", BLACK, 10, 90)
+    pygame.draw.rect(screen, BLACK, text_box, 2)
+    draw_text(input_word, BLACK, text_box.x + 5, text_box.y + 5)
+
+def draw_game_over():
+    screen.fill(WHITE)
+    draw_text("Game Over!", BLACK, 250, 200)
+    draw_text(f"Final Score: {score}", BLACK, 250, 250)
+    draw_text("Press R to restart or Q to quit", BLACK, 200, 300)
+
+def draw_leaderboard():
+    screen.fill(WHITE)
+    draw_text("Leaderboard:", BLACK, 250, 200)
+    # Display leaderboard from file
+    try:
+        with open("leaderboard.txt", "r") as f:
+            leaderboard = f.readlines()
+        leaderboard.sort(reverse=True)
+        for i in range(min(5, len(leaderboard))):
+            draw_text(f"{i+1}. {leaderboard[i]}", BLACK, 250, 250+(i*50))
+    except FileNotFoundError:
+        draw_text("No leaderboard yet!", BLACK, 250, 250)
+    draw_text("Press R to return to menu", BLACK, 200, 500)
+
+def update_leaderboard():
+    # Update leaderboard file with new score
+    try:
+        with open("leaderboard.txt", "a") as f:
+            f.write(f"{score}\n")
+    except FileNotFoundError:
+        with open("leaderboard.txt", "w") as f:
+            f.write(f"{score}\n")
+
+def reset_game():
+    global score, timer, word_index, game_over
+    score = 0
+    timer = 30
+    word_index = 0
+    game_over = False
+
+# Define game states
+MENU = 0
+PLAYING = 1
+GAME_OVER = 2
+LEADERBOARD = 3
+state = MENU
+
+# Define clock
 clock = pygame.time.Clock()
 
-# Define the functions
-def display_text(text, x, y, color):
-    text_surface = FONT.render(text, True, color)
-    text_rect = text_surface.get_rect()
-    text_rect.center = (x, y)
-    window.blit(text_surface, text_rect)
-
-def calculate_average():
-    if len(num_list) == 0:
-        return 0
-    else:
-        return sum(num_list) / len(num_list)
-
-# Start the game loop
-while game_loop:
+# Main game loop
+while True:
     # Handle events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            game_loop = False
-        elif event.type == pygame.KEYDOWN:
-            if event.unicode.isdigit():
-                text_input += event.unicode
-            elif event.key == pygame.K_RETURN:
-                if len(text_input) > 0:
-                    num_list.append(int(text_input))
-                    text_input = ""
-                    average = calculate_average()
-            elif event.key == pygame.K_BACKSPACE:
-                text_input = text_input[:-1]
+            pygame.quit()
+            quit()
+        if event.type == pygame.KEYDOWN:
+            if state == PLAYING:
+                if event.unicode.isalpha():
+                    input_word += event.unicode
+                elif event.key == pygame.K_RETURN:
+                    if input_word == current_word:
+                        score += 1
+                        generate_word()
+                    
+                elif event.key == pygame.K_BACKSPACE:
+                    input_word = input_word[:-1]
+            elif state == GAME_OVER:
+                if event.key == pygame.K_r:
+                    reset_game()
+                    state = PLAYING
+                elif event.key == pygame.K_q:
+                    update_leaderboard()
+                    pygame.quit()
+                    quit()
+            elif state == MENU or state == LEADERBOARD:
+                if event.key == pygame.K_p:
+                    reset_game()
+                    state = PLAYING
+                elif event.key == pygame.K_l:
+                    state = LEADERBOARD
+                elif event.key == pygame.K_q:
+                    pygame.quit()
+                    quit()
+                elif event.key == pygame.K_r:
+                    state = MENU
 
-    # Clear the window
-    window.fill(WHITE)
 
-    # Display the text input and average
-    display_text(text_input, WINDOW_WIDTH // 2, 200, BLACK)
-    display_text(f"Average: {average:.2f}", WINDOW_WIDTH // 2, 400, BLACK)
 
-    # Update the window
+
+    # Update game
+    if state == PLAYING:
+        timer -= 1
+        if timer <= 0:
+            update_leaderboard()
+            state = GAME_OVER
+        elif not game_over:
+            draw_game()
+    elif state == GAME_OVER:
+        draw_game_over()
+    elif state == MENU:
+        screen.fill(WHITE)
+        draw_text("Menu", BLACK, 250, 200)
+        draw_text("Press P to play", BLACK, 250, 250)
+        draw_text("Press L to view leaderboard", BLACK, 250, 300)
+        draw_text("Press Q to quit", BLACK, 250, 350)
+    elif state == LEADERBOARD:
+        draw_leaderboard()
+
+    # Update screen
     pygame.display.update()
 
-    # Set the FPS
-    clock.tick(60)
+    # Set game speed
+    clock.tick(1)
 
-# Quit Pygame
-pygame.quit()
