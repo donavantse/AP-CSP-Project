@@ -1,97 +1,156 @@
 import pygame
 import random
 
+# Initialize Pygame
 pygame.init()
 
+# Define colors
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
 
-#game window
-window_width = 800
-window_height = 600
-window = pygame.display.set_mode((window_width, window_height))
-pygame.display.set_caption("Hangman")
+# Define fonts
+FONT_TITLE = pygame.font.SysFont(None, 72)
+FONT_MENU = pygame.font.SysFont(None, 36)
+FONT_GAME = pygame.font.SysFont(None, 48)
 
+# Define window size
+WINDOW_SIZE = (800, 600)
 
-#colors
-black = (0, 0, 0)
-white = (255, 255, 255)
-red = (255, 0, 0)
-green = (0, 255, 0)
+# Create window
+screen = pygame.display.set_mode(WINDOW_SIZE)
 
+# Set window title
+pygame.display.set_caption("Hangman Game")
 
-#hangman image counter
-images = []
-for i in range(7):
-    image = pygame.image.load(f"hangman{i}.png")
-    images.append(image)
+# Define menu function
+def menu():
+    # Set background color
+    screen.fill(WHITE)
 
+    # Draw title
+    title_text = FONT_TITLE.render("Hangman Game", True, BLACK)
+    screen.blit(title_text, ((WINDOW_SIZE[0] - title_text.get_width()) / 2, 50))
 
-# fonts
-font = pygame.font.SysFont(None, 40)
-title_font = pygame.font.SysFont(None, 80)
+    # Draw menu options
+    option1_text = FONT_MENU.render("Play Game", True, BLACK)
+    screen.blit(option1_text, ((WINDOW_SIZE[0] - option1_text.get_width()) / 2, 200))
 
+    option2_text = FONT_MENU.render("Quit", True, BLACK)
+    screen.blit(option2_text, ((WINDOW_SIZE[0] - option2_text.get_width()) / 2, 250))
 
-#word list
-word_list = ["hippo, alligator, banana, apple, human, monkey, lucky, cave, honey, sunglasses, clock, phone, light, watch"]
-word = random.choice(word_list)  
-guessed_letters = []
-num_wrong_guesses = 0        
+    # Update display
+    pygame.display.flip()
 
+    # Wait for player to select an option
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
 
-#game loop
-running = True
-for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_pos = pygame.mouse.get_pos()
+                if 300 < mouse_pos[0] < 500 and 180 < mouse_pos[1] < 220:
+                    # Start game
+                    return True
+                elif 350 < mouse_pos[0] < 450 and 230 < mouse_pos[1] < 270:
+                    # Quit game
+                    pygame.quit()
+                    quit()
+
+# Define game function
+def game():
+    # Set background color
+    screen.fill(WHITE)
+
+    # Draw title
+    title_text = FONT_TITLE.render("Hangman Game", True, BLACK)
+    screen.blit(title_text, ((WINDOW_SIZE[0] - title_text.get_width()) / 2, 50))
+
+    # Choose a word
+    words = ["hippo", "alligator", "banana", "apple", "human", "monkey", "lucky", "cave", "honey", "sunglasses", "clock", "phone", "light", "watch"]
+    word = random.choice(words)
+
+    #Create a list of underscores to represent the letters in the word
+    underscores = ["_" for letter in word]
+
+    #Number of allowed guesses
+    guesses = []
+    max_guesses = 6
+    num_guesses = 0
+
+    # Loop 
+    while True:
+        #Underscores for the word that has to be guessed
+        word_text = FONT_GAME.render(" ".join(underscores), True, BLACK)
+        screen.blit(word_text, ((WINDOW_SIZE[0] - word_text.get_width()) / 2, 200))
+
+        # Draw guessed letters
+        guessed_text = FONT_GAME.render("Guesses: " + ", ".join(guesses), True, BLACK)
+        screen.blit(guessed_text, ((WINDOW_SIZE[0] - guessed_text.get_width()) / 2, 300))
+
+        # Draw hangman based on number of incorrect guesses
+        if num_guesses == 0:
+            pass
+        elif num_guesses == 1:
+                    pygame.draw.circle(screen, BLACK, (400, 150), 30)
+        elif num_guesses == 2:
+            # Draw body
+            pygame.draw.line(screen, BLACK, (400, 180), (400, 350), 5)
+        elif num_guesses == 3:
+            # Draw left arm
+            pygame.draw.line(screen, BLACK, (400, 220), (360, 270), 5)
+        elif num_guesses == 4:
+            # Draw right arm
+            pygame.draw.line(screen, BLACK, (400, 220), (440, 270), 5)
+        elif num_guesses == 5:
+            # Draw left leg
+            pygame.draw.line(screen, BLACK, (400, 350), (360, 420), 5)
+        elif num_guesses == 6:
+        # Draw right leg and end game
+            pygame.draw.line(screen, BLACK, (400, 350), (440, 420), 5)
+        game_over_text = FONT_GAME.render("Game Over! The word was " + word, True, RED)
+        screen.blit(game_over_text, ((WINDOW_SIZE[0] - game_over_text.get_width()) / 2, 500))
+        pygame.display.flip()
+        pygame.time.wait(3000)
+        return
+
+    # Update display
+    pygame.display.flip()
+
+    # Check for player input
+    for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key >= pygame.K_a and event.key <= pygame.K_z:
-                letter = chr(event.key)
-                if letter not in guessed_letters:
-                    guessed_letters.append(letter)
-                    if letter not in word:
-                        num_wrong_guesses += 1
+            pygame.quit()
+            quit()
 
-#make the screen white
-window.fill(white)
+        if event.type == pygame.KEYDOWN:
+            if event.unicode.isalpha():
+                # Check if the guessed letter is in the word
+                guess = event.unicode.lower()
+                if guess in word:
+                    # Replace underscore with guessed letter
+                    for i in range(len(word)):
+                        if word[i] == guess:
+                            underscores[i] = guess
+                else:
+                    # Add incorrect guess to list and increment number of incorrect guesses
+                    guesses.append(guess)
+                    num_guesses += 1
 
+                # Check if the game is over
+                if "_" not in underscores:
+                    # Player has won
+                    win_text = FONT_GAME.render("Congratulations! You win!", True, BLACK)
+                    screen.blit(win_text, ((WINDOW_SIZE[0] - win_text.get_width()) / 2, 500))
+                    pygame.display.flip()
+                    pygame.time.wait(3000)
+                    return
 
-# draw word
-word_text = ""
-for letter in word:
-        if letter in guessed_letters:
-            word_text += f"{letter} "
-        else:
-            word_text += "_ "
-word_render = font.render(word_text, True, black)
-word_rect = word_render.get_rect()
-word_rect.center = (window_width//2, 200)
-window.blit(word_render, word_rect)
-    
-# draw guessed letters
-guessed_text = " ".join(guessed_letters)
-guessed_render = font.render(guessed_text, True, black)
-guessed_rect = guessed_render.get_rect()
-guessed_rect.center = (window_width//2, 300)
-window.blit(guessed_render, guessed_rect)
-    
-# draw hangman image
-image_rect = images[num_wrong_guesses].get_rect()
-image_rect.center = (window_width//2, 400)
-window.blit(images[num_wrong_guesses], image_rect)
-    
-# check for win/lose
-if "_" not in word_text:
-    result_text = font.render("You win!", True, red)
-    result_rect = result_text.get_rect()
-    result_rect.center = (window_width//2, 500)
-    window.blit(result_text, result_rect)
-    running = False
-elif num_wrong_guesses == 6:
-    result_text = font.render("You lose!", True, red)
-    result_rect = result_text.get_rect()
-    result_rect.center = (window_width//2, 500)
-    window.blit(result_text, result_rect)
-    running = False
-    
-    # update screen
-    pygame.display.update()
-
+while True:
+    if menu():
+        game()
+    else:
+        pygame.quit()
+        quit()
