@@ -1,0 +1,97 @@
+import pygame
+import random
+
+pygame.init()
+
+
+#game window
+window_width = 800
+window_height = 600
+window = pygame.display.set_mode((window_width, window_height))
+pygame.display.set_caption("Hangman")
+
+
+#colors
+black = (0, 0, 0)
+white = (255, 255, 255)
+red = (255, 0, 0)
+green = (0, 255, 0)
+
+
+#hangman image counter
+images = []
+for i in range(7):
+    image = pygame.image.load(f"hangman{i}.png")
+    images.append(image)
+
+
+# fonts
+font = pygame.font.SysFont(None, 40)
+title_font = pygame.font.SysFont(None, 80)
+
+
+#word list
+word_list = ["hippo, alligator, banana, apple, human, monkey, lucky, cave, honey, sunglasses, clock, phone, light, watch"]
+word = random.choice(word_list)  
+guessed_letters = []
+num_wrong_guesses = 0        
+
+
+#game loop
+running = True
+for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key >= pygame.K_a and event.key <= pygame.K_z:
+                letter = chr(event.key)
+                if letter not in guessed_letters:
+                    guessed_letters.append(letter)
+                    if letter not in word:
+                        num_wrong_guesses += 1
+
+#make the screen white
+window.fill(white)
+
+
+# draw word
+word_text = ""
+for letter in word:
+        if letter in guessed_letters:
+            word_text += f"{letter} "
+        else:
+            word_text += "_ "
+word_render = font.render(word_text, True, black)
+word_rect = word_render.get_rect()
+word_rect.center = (window_width//2, 200)
+window.blit(word_render, word_rect)
+    
+# draw guessed letters
+guessed_text = " ".join(guessed_letters)
+guessed_render = font.render(guessed_text, True, black)
+guessed_rect = guessed_render.get_rect()
+guessed_rect.center = (window_width//2, 300)
+window.blit(guessed_render, guessed_rect)
+    
+# draw hangman image
+image_rect = images[num_wrong_guesses].get_rect()
+image_rect.center = (window_width//2, 400)
+window.blit(images[num_wrong_guesses], image_rect)
+    
+# check for win/lose
+if "_" not in word_text:
+    result_text = font.render("You win!", True, red)
+    result_rect = result_text.get_rect()
+    result_rect.center = (window_width//2, 500)
+    window.blit(result_text, result_rect)
+    running = False
+elif num_wrong_guesses == 6:
+    result_text = font.render("You lose!", True, red)
+    result_rect = result_text.get_rect()
+    result_rect.center = (window_width//2, 500)
+    window.blit(result_text, result_rect)
+    running = False
+    
+    # update screen
+    pygame.display.update()
+
